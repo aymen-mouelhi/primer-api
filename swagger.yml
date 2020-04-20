@@ -1,0 +1,149 @@
+swagger: "2.0"
+info:
+  description: "This is the documentation for the draft API version of the tokenise endpoint"
+  version: "1.0.0"
+  title: "PrimerAPI Documentation"
+host: "ll6zisbt19.execute-api.us-east-1.amazonaws.com"
+basePath: "/v1"
+tags:
+- name: "Token"
+  description: "Tokenize Credit Cards"
+  externalDocs:
+    description: "Find out more"
+    url: "http://primerapi.com"
+schemes:
+- "https"
+- "http"
+paths:
+  /tokenise:
+    post:
+      tags:
+      - "Token"
+      summary: "Generate a new token for the given credit card"
+      description: ""
+      operationId: "createToken"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Credit card object that needs to be tokenized"
+        required: true
+        schema:
+          $ref: "#/definitions/CreditCard"
+      responses:
+        '200':
+          description: "successful operation"
+          schema:
+            $ref: '#/definitions/Token'
+        '401':
+          description: "Invalid input"
+        '500':
+          description: "Internal Server Error"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TokenizeFunction.Arn}/invocations'
+        responses:
+          default:
+            statusCode: 200
+        passthroughBehavior: when_no_match
+        httpMethod: POST
+        type: aws_proxy
+  
+  /sale:
+    post:
+      tags:
+      - "Token"
+      summary: "Submits the card payment information to a processor sandbox"
+      description: "Submits the card payment information to a processor sandbox and returns abasic abstracted response payload"
+      operationId: "sale"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Transaction object"
+        required: true
+        schema:
+          $ref: "#/definitions/Sale"
+      responses:
+        '200':
+          description: "successful operation"
+          schema:
+            $ref: '#/definitions/Transaction'
+        '401':
+          description: "Invalid input"
+        '500':
+          description: "Internal Server Error"
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SaleFunction.Arn}/invocations'
+        responses:
+          default:
+            statusCode: 200
+        passthroughBehavior: when_no_match
+        httpMethod: POST
+        type: aws_proxy
+
+
+definitions:
+  CreditCard:
+    type: "object"
+    properties:
+      number:
+        type: "string"
+      expiration_date:
+        type: "string"
+      unique:
+        type: "integer"
+  Sale:
+    type: "object"
+    properties:
+      token:
+        type: "string"
+      amount:
+        type: "string"
+  Transaction:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+      amount:
+        type: "string"
+      merchant_account_id:
+        type: "string"
+      plan_id:
+        type: "string"
+      recurring:
+        type: "boolean"
+      refund:
+        type: "object"
+      transaction_source:
+        type: "string"
+        enum:
+          - "api"
+          - "transfer"
+          - "machine"
+      status:
+        type: "string"
+        enum:
+          - "authorized"
+          - "processed"
+          - "pending"
+          - "rejected"
+      created_at:
+        type: "string"
+  Token:
+    type: "object"
+    required:
+      - "token"
+    properties:
+      token:
+        type: "string"
+externalDocs:
+  description: "Find out more about PrimerAPI"
+  url: 'https://primerapi.com/'

@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  primer-api
+  SAM Template for primer-api
+Resources:
+  PrimerApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: Basic AWS Api Gateway
+      StageName: Staging
+      Cors:
+        AllowMethods: "'POST, GET'"
+        AllowHeaders: "'Content-Type'"
+        AllowOrigin: "'*'"
+        MaxAge: "'600'"
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: ./swagger.yml
+
+  TokenizeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: primer_api/
+      Handler: app.tokenise
+      Runtime: python3.7
+      Events:
+        TokenizeApi:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: PrimerApiGateway
+            Path: /tokenise
+            Method: POST
+
+  SaleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: primer_api/
+      Handler: app.sale
+      Runtime: python3.7
+      Events:
+        TokenizeApi:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: PrimerApiGateway
+            Path: /sale
+            Method: POST
+
+Outputs:
+  PrimerApiGateway:
+    Description: API Gateway endpoint URL for Staging stage for Hello World function
+    Value:
+      Fn::Sub: https://${PrimerApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Staging/v1/
+  PrimerApiGatewayRestApiId:
+    Description: API Gateway ARN for Basic AWS API Gateway
+    Value:
+      Ref: PrimerApiGateway
+    Export:
+      Name: PrimerApiGateway-RestApiId
+  PrimerApiGatewayRootResourceId:
+    Value:
+      Fn::GetAtt:
+        - PrimerApiGateway
+        - RootResourceId
+    Export:
+      Name: PrimerApiGateway-RootResourceId
